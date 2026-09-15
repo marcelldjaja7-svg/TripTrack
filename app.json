@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "TripTrack",
+    "slug": "triptrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F6F4F1"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.triptrack.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "TripTrack uses your location to record trip distance, speed, and route.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "TripTrack uses your location to record trip distance, speed, and route."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E85D04",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE"
+      ],
+      "package": "com.triptrack.app",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow TripTrack to use your location to track trips."
+        }
+      ],
+      "expo-sharing",
+      "expo-font",
+      "expo-splash-screen"
+    ]
+  }
+}
