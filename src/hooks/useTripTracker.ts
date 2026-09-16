@@ -152,11 +152,18 @@ export function useTripTracker() {
     setStats(emptyStats);
     setStatus('recording');
 
+    // Web: skip the browser geolocation prompt and use a realistic demo path.
+    // Native: request GPS and fall back to simulation if denied.
+    if (Platform.OS === 'web') {
+      setPermissionDenied(false);
+      startSimulation();
+      return;
+    }
+
     try {
       const { status: perm } = await Location.requestForegroundPermissionsAsync();
       if (perm !== 'granted') {
         setPermissionDenied(true);
-        // Fall back to simulation so the MVP is demoable on web / denied GPS
         startSimulation();
         return;
       }
@@ -176,14 +183,8 @@ export function useTripTracker() {
         speed: current.coords.speed,
         altitude: current.coords.altitude,
       });
-
-      // Web browsers often throttle watchPosition; use simulation on web for reliable demos
-      if (Platform.OS === 'web') {
-        startSimulation();
-      } else {
-        setUsingSimulation(false);
-        await startGpsWatch();
-      }
+      setUsingSimulation(false);
+      await startGpsWatch();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to start location');
       startSimulation();
