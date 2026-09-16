@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,14 +12,15 @@ import {
 } from 'react-native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MetricGrid } from '../components/MetricGrid';
+import { ElevationChart } from '../components/ElevationChart';
 import { RoutePreview } from '../components/RoutePreview';
 import { useTrips } from '../context/TripsContext';
 import type { RootStackParamList } from '../types';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, radii, spacing } from '../theme';
 import {
   formatDistance,
-  formatDuration,
+  formatDurationShort,
+  formatElevation,
   formatSpeed,
   formatWhen,
 } from '../utils/format';
@@ -42,88 +44,114 @@ export function TripDetailScreen({ route, navigation }: Props) {
   }
 
   const mapW = Math.min(width - spacing.md * 2, 560);
-  const mapH = Math.round(mapW * 0.6);
+  const mapH = Math.round(mapW * 0.48);
+  const chartW = mapW;
+  const chartH = 110;
 
   const saveTitle = async () => {
-    const next = title.trim() || trip.title;
-    await updateTrip({ ...trip, title: next });
+    await updateTrip({ ...trip, title: title.trim() || trip.title });
     setEditing(false);
-  };
-
-  const onDelete = () => {
-    Alert.alert('Delete trip?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await removeTrip(trip.id);
-          navigation.goBack();
-        },
-      },
-    ]);
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.when}>{formatWhen(trip.startedAt)}</Text>
-        {trip.locationLabel ? (
-          <Text style={styles.loc}>{trip.locationLabel}</Text>
-        ) : null}
-
-        {editing ? (
-          <View style={styles.editRow}>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              autoFocus
-              placeholder="Trip title"
-              placeholderTextColor={colors.inkFaint}
-            />
-            <Pressable onPress={saveTitle}>
-              <Text style={styles.link}>Save</Text>
-            </Pressable>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            {editing ? (
+              <TextInput
+                style={styles.input}
+                value={title}
+                onChangeText={setTitle}
+                autoFocus
+              />
+            ) : (
+              <Pressable onLongPress={() => setEditing(true)}>
+                <Text style={styles.title}>{trip.title}</Text>
+              </Pressable>
+            )}
+            <Text style={styles.meta}>
+              {formatWhen(trip.startedAt)} · {trip.mode}
+            </Text>
           </View>
-        ) : (
-          <Pressable onLongPress={() => setEditing(true)}>
-            <Text style={styles.title}>{trip.title}</Text>
-            <Text style={styles.editHint}>Long-press to rename</Text>
-          </Pressable>
-        )}
-
-        <MetricGrid
-          columns={2}
-          metrics={[
-            { label: 'Distance', value: formatDistance(trip.distanceMeters) },
-            { label: 'Time', value: formatDuration(trip.durationMs) },
-            { label: 'Avg speed', value: formatSpeed(trip.avgSpeedMps) },
-            { label: 'Max speed', value: formatSpeed(trip.maxSpeedMps) },
-          ]}
-        />
-
-        <View style={styles.mapWrap}>
-          <RoutePreview points={trip.points} width={mapW} height={mapH} />
+          {trip.coverUri ? (
+            <Image source={{ uri: trip.coverUri }} style={styles.thumb} />
+          ) : null}
         </View>
 
-        <Text style={styles.points}>
-          {trip.points.length} location points recorded
-        </Text>
+        <View style={styles.mapWrap}>
+          <RoutePreview
+            points={trip.points}
+            width={mapW}
+            height={mapH}
+            showEndpoints
+            glow
+          />
+        </View>
+
+        <View style={styles.grid}>
+          {[
+            { label: 'Distance', value: formatDistance(trip.distanceMeters) },
+            { label: 'Time', value: formatDurationShort(trip.durationMs) },
+            { label: 'Avg. Speed', value: formatSpeed(trip.avgSpeedMps) },
+            {
+              label: 'Elevation Gain',
+              value: formatElevation(trip.elevationGainMeters),
+            },
+            { label: 'Max Speed', value: formatSpeed(trip.maxSpeedMps) },
+            { label: 'Calories', value: `${trip.calories} kcal` },
+          ].map((m) => (
+            <View key={m.label} style={styles.statCard}>
+              <Text style={styles.statValue}>{m.value}</Text>
+              <Text style={styles.statLabel}>{m.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.section}>Elevation profile</Text>
+        <View style={styles.chartWrap}>
+          <ElevationChart points={trip.points} width={chartW} height={chartH} />
+        </View>
+
+        <View style={styles.actions}>
+          {editing ? (
+            <Pressable style={styles.secondaryBtn} onPress={saveTitle}>
+              <Text style={styles.secondaryText}>Save title</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={styles.secondaryBtn}
+              onPress={() => setEditing(true)}
+            >
+              <Text style={styles.secondaryText}>Edit Trip</Text>
+            </Pressable>
+          )}
+          <Pressable
+            style={styles.primaryBtn}
+            onPress={() =>
+              navigation.navigate('ShareDesigner', { tripId: trip.id })
+            }
+          >
+            <Text style={styles.primaryText}>Share</Text>
+          </Pressable>
+        </View>
 
         <Pressable
-          style={styles.shareBtn}
           onPress={() =>
-            navigation.navigate('ShareDesigner', { tripId: trip.id })
+            Alert.alert('Delete trip?', 'This cannot be undone.', [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: async () => {
+                  await removeTrip(trip.id);
+                  navigation.goBack();
+                },
+              },
+            ])
           }
-          accessibilityRole="button"
-          accessibilityLabel="Customize and share"
         >
-          <Text style={styles.shareText}>Customize & share</Text>
-        </Pressable>
-
-        <Pressable style={styles.deleteBtn} onPress={onDelete}>
-          <Text style={styles.deleteText}>Delete trip</Text>
+          <Text style={styles.delete}>Delete trip</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -133,68 +161,103 @@ export function TripDetailScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
-  when: { ...typography.caption },
-  loc: { ...typography.caption, marginTop: 2 },
+  headerRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
   title: {
-    ...typography.title,
+    fontFamily: 'Outfit_700Bold',
     fontSize: 28,
     color: colors.ink,
-    marginTop: 8,
-    marginBottom: 4,
+    letterSpacing: -0.5,
   },
-  editHint: { ...typography.caption, marginBottom: 12 },
-  editRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginVertical: 8,
+  meta: {
+    fontFamily: 'SourceSans3_400Regular',
+    color: colors.inkMuted,
+    marginTop: 4,
   },
+  thumb: { width: 64, height: 64, borderRadius: radii.sm },
   input: {
-    flex: 1,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radii.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontFamily: 'Outfit_600SemiBold',
-    fontSize: 20,
+    fontSize: 22,
     backgroundColor: colors.surface,
     color: colors.ink,
   },
-  link: {
-    fontFamily: 'SourceSans3_600SemiBold',
-    color: colors.primary,
-    fontSize: 16,
-  },
   mapWrap: {
-    marginTop: spacing.md,
     borderRadius: radii.md,
     overflow: 'hidden',
+    backgroundColor: colors.surface,
   },
-  points: { ...typography.caption, marginTop: 10 },
-  shareBtn: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 16,
-    alignItems: 'center',
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 14,
   },
-  shareText: {
+  statCard: {
+    width: '48%' as `${number}%`,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    padding: 14,
+  },
+  statValue: {
     fontFamily: 'Outfit_700Bold',
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 20,
+    color: colors.ink,
   },
-  deleteBtn: {
-    marginTop: 12,
+  statLabel: {
+    fontFamily: 'SourceSans3_400Regular',
+    color: colors.inkMuted,
+    marginTop: 4,
+    fontSize: 12,
+  },
+  section: {
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 16,
+    color: colors.ink,
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  chartWrap: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    padding: 12,
+  },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  secondaryBtn: {
+    flex: 1,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  deleteText: {
+  secondaryText: {
+    fontFamily: 'Outfit_600SemiBold',
+    color: colors.ink,
+  },
+  primaryBtn: {
+    flex: 1,
+    borderRadius: radii.pill,
+    backgroundColor: colors.ink,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  primaryText: {
+    fontFamily: 'Outfit_700Bold',
+    color: '#fff',
+  },
+  delete: {
+    textAlign: 'center',
+    marginTop: 16,
     fontFamily: 'SourceSans3_600SemiBold',
-    color: colors.danger,
+    color: colors.record,
   },
   missing: {
-    ...typography.body,
     padding: spacing.lg,
+    fontFamily: 'SourceSans3_400Regular',
   },
 });

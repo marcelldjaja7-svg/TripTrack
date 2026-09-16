@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TripTrack",
-    "slug": "triptrack",
+    "name": "Triply",
+    "slug": "triply",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,19 +9,19 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F6F4F1"
+      "backgroundColor": "#0B0F14"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.triptrack.app",
+      "bundleIdentifier": "com.triply.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "TripTrack uses your location to record trip distance, speed, and route.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "TripTrack uses your location to record trip distance, speed, and route."
+        "NSLocationWhenInUseUsageDescription": "Triply uses your location to record trip distance, speed, and route.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Triply uses your location to record trip distance, speed, and route."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E85D04",
+        "backgroundColor": "#0B0F14",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -31,7 +31,7 @@
         "ACCESS_FINE_LOCATION",
         "FOREGROUND_SERVICE"
       ],
-      "package": "com.triptrack.app",
+      "package": "com.triply.app",
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -41,12 +41,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow TripTrack to use your location to track trips."
+          "locationWhenInUsePermission": "Allow Triply to use your location to track trips."
         }
       ],
       "expo-sharing",
-      "expo-font",
-      "expo-splash-screen"
+      "expo-font"
     ]
   }
 }

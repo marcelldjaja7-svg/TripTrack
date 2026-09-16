@@ -2,8 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
 import type { GeoPoint, Trip } from '../types';
-import { createSimulatedRoute, pathDistanceMeters } from '../utils/geo';
-import { defaultTripTitle } from '../utils/format';
+import {
+  createSimulatedRoute,
+  elevationGainMeters,
+  pathDistanceMeters,
+} from '../utils/geo';
+import { defaultTripTitle, estimateCalories } from '../utils/format';
+import { media } from '../storage/trips';
 
 export type TrackerStatus = 'idle' | 'recording' | 'paused';
 
@@ -13,6 +18,7 @@ type LiveStats = {
   currentSpeedMps: number;
   avgSpeedMps: number;
   maxSpeedMps: number;
+  elevationMeters: number;
   points: GeoPoint[];
 };
 
@@ -22,6 +28,7 @@ const emptyStats: LiveStats = {
   currentSpeedMps: 0,
   avgSpeedMps: 0,
   maxSpeedMps: 0,
+  elevationMeters: 0,
   points: [],
 };
 
@@ -78,6 +85,7 @@ export function useTripTracker() {
       currentSpeedMps,
       avgSpeedMps,
       maxSpeedMps: maxSpeedRef.current,
+      elevationMeters: last?.altitude ?? elevationGainMeters(points),
       points: [...points],
     });
   }, []);
@@ -222,6 +230,7 @@ export function useTripTracker() {
     );
     const distanceMeters = pathDistanceMeters(points);
     const avgSpeedMps = distanceMeters / (durationMs / 1000);
+    const elev = elevationGainMeters(points);
     const trip: Trip = {
       id: newId(),
       title: defaultTripTitle(startedAt),
@@ -231,7 +240,14 @@ export function useTripTracker() {
       distanceMeters,
       avgSpeedMps,
       maxSpeedMps: Math.max(maxSpeedRef.current, avgSpeedMps),
+      elevationGainMeters: elev || Math.round(distanceMeters / 40),
+      calories: estimateCalories(distanceMeters, durationMs),
+      mode: 'Drive',
       points,
+      coverUri: media.ocean,
+      likes: 0,
+      comments: 0,
+      caption: 'Tracked with Triply',
     };
     startedAtRef.current = null;
     pauseStartedRef.current = null;

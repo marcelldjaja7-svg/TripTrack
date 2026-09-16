@@ -6,6 +6,8 @@ export type GeoPoint = {
   altitude?: number | null;
 };
 
+export type TripMode = 'Motorcycle' | 'Drive' | 'Walk' | 'Bike' | 'Other';
+
 export type Trip = {
   id: string;
   title: string;
@@ -15,16 +17,24 @@ export type Trip = {
   distanceMeters: number;
   avgSpeedMps: number;
   maxSpeedMps: number;
+  elevationGainMeters: number;
+  calories: number;
+  mode: TripMode;
   points: GeoPoint[];
   locationLabel?: string;
+  coverUri?: string;
+  caption?: string;
+  likes?: number;
+  comments?: number;
 };
 
 export type ShareTemplateId =
-  | 'sunset'
-  | 'night'
+  | 'story'
   | 'minimal'
-  | 'postcard'
-  | 'trail';
+  | 'photo'
+  | 'map'
+  | 'stats'
+  | 'quote';
 
 export type ShareDesign = {
   templateId: ShareTemplateId;
@@ -33,18 +43,22 @@ export type ShareDesign = {
   accentColor: string;
   showDistance: boolean;
   showDuration: boolean;
-  showAvgSpeed: boolean;
+  showElevation: boolean;
   showRoute: boolean;
 };
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   Tabs: undefined;
   TripDetail: { tripId: string };
   ShareDesigner: { tripId: string };
+  RecordModal: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
+  Explore: undefined;
   Record: undefined;
-  You: undefined;
+  Trips: undefined;
+  Profile: undefined;
 };

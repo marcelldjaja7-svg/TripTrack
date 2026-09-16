@@ -14,11 +14,9 @@ export function haversineMeters(
   const dLon = toRad(b.longitude - a.longitude);
   const lat1 = toRad(a.latitude);
   const lat2 = toRad(b.latitude);
-
   const h =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
@@ -29,6 +27,18 @@ export function pathDistanceMeters(points: GeoPoint[]): number {
     total += haversineMeters(points[i - 1], points[i]);
   }
   return total;
+}
+
+export function elevationGainMeters(points: GeoPoint[]): number {
+  let gain = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1].altitude;
+    const next = points[i].altitude;
+    if (prev == null || next == null) continue;
+    const delta = next - prev;
+    if (delta > 0) gain += delta;
+  }
+  return gain;
 }
 
 export function boundingBox(points: GeoPoint[]) {
@@ -48,7 +58,6 @@ export function boundingBox(points: GeoPoint[]) {
   return { minLat, maxLat, minLon, maxLon };
 }
 
-/** Project GPS points into a padded SVG viewBox path string. */
 export function pointsToSvgPath(
   points: GeoPoint[],
   width: number,
@@ -61,20 +70,33 @@ export function pointsToSvgPath(
   const lonSpan = Math.max(maxLon - minLon, 0.0001);
   const usableW = width - padding * 2;
   const usableH = height - padding * 2;
-
   const coords = points.map((p) => {
     const x = padding + ((p.longitude - minLon) / lonSpan) * usableW;
     const y = padding + (1 - (p.latitude - minLat) / latSpan) * usableH;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
-
   return `M ${coords[0]} L ${coords.slice(1).join(' ')}`;
 }
 
-/**
- * Demo route that advances at a realistic speed (~28 km/h).
- * Distance grows with elapsed time instead of spanning a fixed path early.
- */
+export function elevationProfile(
+  points: GeoPoint[],
+  width: number,
+  height: number,
+): string {
+  if (points.length < 2) return '';
+  const alts = points.map((p, i) => p.altitude ?? i * 2);
+  const min = Math.min(...alts);
+  const max = Math.max(...alts);
+  const span = Math.max(max - min, 1);
+  const coords = alts.map((alt, i) => {
+    const x = (i / (alts.length - 1)) * width;
+    const y = height - ((alt - min) / span) * (height - 8) - 4;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  return `M ${coords[0]} L ${coords.slice(1).join(' ')}`;
+}
+
+/** Demo route that advances at a realistic speed (~28 km/h). */
 export function createSimulatedRoute(
   start: { latitude: number; longitude: number },
   startedAt: number,
@@ -94,11 +116,13 @@ export function createSimulatedRoute(
     const meters = i * metersPerStep;
     const bend = Math.sin(i / 9) * 4;
     const drift = Math.cos(i / 7) * 2.5;
+    const baseAlt = 120 + Math.sin(i / 12) * 40 + i * 0.4;
     points.push({
       latitude: start.latitude + (meters * 0.75 + bend) * latPerMeter,
       longitude: start.longitude + (meters * 0.55 + drift) * lonPerMeter,
       timestamp: startedAt + i * stepMs,
       speed: speedMps + Math.sin(i / 5) * 1.5,
+      altitude: baseAlt,
     });
   }
   return points;
