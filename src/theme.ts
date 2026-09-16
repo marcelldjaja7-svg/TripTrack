@@ -1,17 +1,24 @@
 export const colors = {
-  primary: '#E85D04',
-  primaryDark: '#C44A00',
-  primarySoft: '#FFF0E6',
-  ink: '#141414',
-  inkMuted: '#6B6B6B',
-  inkFaint: '#9A9A9A',
+  brand: '#0B0F14',
+  brandSoft: '#F4F6F8',
+  ink: '#0F172A',
+  inkMuted: '#64748B',
+  inkFaint: '#94A3B8',
   surface: '#FFFFFF',
-  canvas: '#F6F4F1',
-  border: '#E8E4DE',
-  success: '#1F7A4D',
-  mapTrack: '#E85D04',
-  danger: '#C62828',
-  overlay: 'rgba(20,20,20,0.55)',
+  canvas: '#F5F7FA',
+  border: '#E2E8F0',
+  record: '#E53935',
+  recordSoft: 'rgba(229, 57, 53, 0.18)',
+  route: '#3B82F6',
+  routeGlow: '#60A5FA',
+  success: '#10B981',
+  overlay: 'rgba(8, 12, 18, 0.55)',
+  dark: '#0B0F14',
+  darkPanel: 'rgba(15, 23, 42, 0.78)',
+  darkCard: '#151B26',
+  mapNight: '#0F172A',
+  chip: '#EEF2F7',
+  chipActive: '#0F172A',
 };
 
 export const spacing = {
@@ -23,50 +30,19 @@ export const spacing = {
 };
 
 export const radii = {
-  sm: 8,
-  md: 12,
-  lg: 20,
+  sm: 10,
+  md: 16,
+  lg: 24,
+  xl: 32,
   pill: 999,
 };
 
-export const typography = {
-  brand: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 28,
-    letterSpacing: -0.5,
-  },
-  title: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 22,
-    letterSpacing: -0.3,
-  },
-  heading: {
-    fontFamily: 'Outfit_600SemiBold',
-    fontSize: 18,
-  },
-  body: {
-    fontFamily: 'SourceSans3_400Regular',
-    fontSize: 15,
-  },
-  bodyBold: {
-    fontFamily: 'SourceSans3_600SemiBold',
-    fontSize: 15,
-  },
-  metric: {
-    fontFamily: 'Outfit_700Bold',
-    fontSize: 24,
-    letterSpacing: -0.4,
-  },
-  metricLabel: {
-    fontFamily: 'SourceSans3_400Regular',
-    fontSize: 12,
-    color: colors.inkMuted,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.6,
-  },
-  caption: {
-    fontFamily: 'SourceSans3_400Regular',
-    fontSize: 13,
-    color: colors.inkMuted,
+export const shadows = {
+  card: {
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
   },
 };

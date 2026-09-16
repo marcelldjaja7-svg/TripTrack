@@ -33,7 +33,7 @@ export default function App() {
           backgroundColor: colors.canvas,
         }}
       >
-        <ActivityIndicator color={colors.primary} size="large" />
+        <ActivityIndicator color={colors.ink} size="large" />
       </View>
     );
   }

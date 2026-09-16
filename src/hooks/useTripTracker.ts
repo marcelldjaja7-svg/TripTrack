@@ -2,8 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
 import type { GeoPoint, Trip } from '../types';
-import { createSimulatedRoute, pathDistanceMeters } from '../utils/geo';
-import { defaultTripTitle } from '../utils/format';
+import {
+  createSimulatedRoute,
+  elevationGainMeters,
+  pathDistanceMeters,
+} from '../utils/geo';
+import { defaultTripTitle, estimateCalories } from '../utils/format';
+import { media } from '../storage/trips';
 
 export type TrackerStatus = 'idle' | 'recording' | 'paused';
 
@@ -13,6 +18,7 @@ type LiveStats = {
   currentSpeedMps: number;
   avgSpeedMps: number;
   maxSpeedMps: number;
+  elevationMeters: number;
   points: GeoPoint[];
 };
 
@@ -22,6 +28,7 @@ const emptyStats: LiveStats = {
   currentSpeedMps: 0,
   avgSpeedMps: 0,
   maxSpeedMps: 0,
+  elevationMeters: 0,
   points: [],
 };
 
@@ -78,6 +85,7 @@ export function useTripTracker() {
       currentSpeedMps,
       avgSpeedMps,
       maxSpeedMps: maxSpeedRef.current,
+      elevationMeters: last?.altitude ?? elevationGainMeters(points),
       points: [...points],
     });
   }, []);
@@ -152,11 +160,18 @@ export function useTripTracker() {
     setStats(emptyStats);
     setStatus('recording');
 
+    // Web: skip the browser geolocation prompt and use a realistic demo path.
+    // Native: request GPS and fall back to simulation if denied.
+    if (Platform.OS === 'web') {
+      setPermissionDenied(false);
+      startSimulation();
+      return;
+    }
+
     try {
       const { status: perm } = await Location.requestForegroundPermissionsAsync();
       if (perm !== 'granted') {
         setPermissionDenied(true);
-        // Fall back to simulation so the MVP is demoable on web / denied GPS
         startSimulation();
         return;
       }
@@ -176,14 +191,8 @@ export function useTripTracker() {
         speed: current.coords.speed,
         altitude: current.coords.altitude,
       });
-
-      // Web browsers often throttle watchPosition; use simulation on web for reliable demos
-      if (Platform.OS === 'web') {
-        startSimulation();
-      } else {
-        setUsingSimulation(false);
-        await startGpsWatch();
-      }
+      setUsingSimulation(false);
+      await startGpsWatch();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to start location');
       startSimulation();
@@ -221,6 +230,7 @@ export function useTripTracker() {
     );
     const distanceMeters = pathDistanceMeters(points);
     const avgSpeedMps = distanceMeters / (durationMs / 1000);
+    const elev = elevationGainMeters(points);
     const trip: Trip = {
       id: newId(),
       title: defaultTripTitle(startedAt),
@@ -230,7 +240,14 @@ export function useTripTracker() {
       distanceMeters,
       avgSpeedMps,
       maxSpeedMps: Math.max(maxSpeedRef.current, avgSpeedMps),
+      elevationGainMeters: elev || Math.round(distanceMeters / 40),
+      calories: estimateCalories(distanceMeters, durationMs),
+      mode: 'Drive',
       points,
+      coverUri: media.ocean,
+      likes: 0,
+      comments: 0,
+      caption: 'Tracked with Triply',
     };
     startedAtRef.current = null;
     pauseStartedRef.current = null;

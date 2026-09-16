@@ -7,16 +7,24 @@ import React, {
   useState,
 } from 'react';
 import type { Trip } from '../types';
-import { deleteTrip, loadTrips, upsertTrip } from '../storage/trips';
+import {
+  deleteTrip,
+  loadOnboarded,
+  loadTrips,
+  setOnboarded,
+  upsertTrip,
+} from '../storage/trips';
 
 type TripsContextValue = {
   trips: Trip[];
   loading: boolean;
+  onboarded: boolean;
   refresh: () => Promise<void>;
   addTrip: (trip: Trip) => Promise<void>;
   updateTrip: (trip: Trip) => Promise<void>;
   removeTrip: (tripId: string) => Promise<void>;
   getTrip: (tripId: string) => Trip | undefined;
+  completeOnboarding: () => Promise<void>;
 };
 
 const TripsContext = createContext<TripsContextValue | null>(null);
@@ -24,10 +32,12 @@ const TripsContext = createContext<TripsContextValue | null>(null);
 export function TripsProvider({ children }: { children: React.ReactNode }) {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [onboarded, setOnboardedState] = useState(false);
 
   const refresh = useCallback(async () => {
-    const data = await loadTrips();
+    const [data, done] = await Promise.all([loadTrips(), loadOnboarded()]);
     setTrips(data);
+    setOnboardedState(done);
     setLoading(false);
   }, []);
 
@@ -36,18 +46,15 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const addTrip = useCallback(async (trip: Trip) => {
-    const next = await upsertTrip(trip);
-    setTrips(next);
+    setTrips(await upsertTrip(trip));
   }, []);
 
   const updateTrip = useCallback(async (trip: Trip) => {
-    const next = await upsertTrip(trip);
-    setTrips(next);
+    setTrips(await upsertTrip(trip));
   }, []);
 
   const removeTrip = useCallback(async (tripId: string) => {
-    const next = await deleteTrip(tripId);
-    setTrips(next);
+    setTrips(await deleteTrip(tripId));
   }, []);
 
   const getTrip = useCallback(
@@ -55,17 +62,34 @@ export function TripsProvider({ children }: { children: React.ReactNode }) {
     [trips],
   );
 
+  const completeOnboarding = useCallback(async () => {
+    await setOnboarded();
+    setOnboardedState(true);
+  }, []);
+
   const value = useMemo(
     () => ({
       trips,
       loading,
+      onboarded,
       refresh,
       addTrip,
       updateTrip,
       removeTrip,
       getTrip,
+      completeOnboarding,
     }),
-    [trips, loading, refresh, addTrip, updateTrip, removeTrip, getTrip],
+    [
+      trips,
+      loading,
+      onboarded,
+      refresh,
+      addTrip,
+      updateTrip,
+      removeTrip,
+      getTrip,
+      completeOnboarding,
+    ],
   );
 
   return <TripsContext.Provider value={value}>{children}</TripsContext.Provider>;

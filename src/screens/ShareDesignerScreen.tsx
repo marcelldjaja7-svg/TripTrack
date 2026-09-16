@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -17,19 +17,26 @@ import * as Sharing from 'expo-sharing';
 import { ShareCardCanvas } from '../components/ShareCardCanvas';
 import { useTrips } from '../context/TripsContext';
 import type { RootStackParamList, ShareDesign, ShareTemplateId } from '../types';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, radii, spacing } from '../theme';
 
 type Props = StackScreenProps<RootStackParamList, 'ShareDesigner'>;
 
-const TEMPLATES: { id: ShareTemplateId; label: string }[] = [
-  { id: 'sunset', label: 'Sunset' },
-  { id: 'night', label: 'Night' },
-  { id: 'minimal', label: 'Minimal' },
-  { id: 'postcard', label: 'Postcard' },
-  { id: 'trail', label: 'Trail' },
+const FILTERS = ['All', 'Minimal', 'Photo', 'Map', 'Stats'] as const;
+
+const TEMPLATES: {
+  id: ShareTemplateId;
+  label: string;
+  filter: (typeof FILTERS)[number];
+}[] = [
+  { id: 'story', label: 'Story', filter: 'Photo' },
+  { id: 'photo', label: 'Photo', filter: 'Photo' },
+  { id: 'minimal', label: 'Minimal', filter: 'Minimal' },
+  { id: 'map', label: 'Map Glow', filter: 'Map' },
+  { id: 'stats', label: 'Stats', filter: 'Stats' },
+  { id: 'quote', label: 'Quote', filter: 'Minimal' },
 ];
 
-const ACCENTS = ['#E85D04', '#F4A261', '#2A9D8F', '#E9C46A', '#264653', '#E76F51'];
+const ACCENTS = ['#F8FAFC', '#3B82F6', '#E53935', '#F59E0B', '#10B981', '#A78BFA'];
 
 export function ShareDesignerScreen({ route }: Props) {
   const { tripId } = route.params;
@@ -37,22 +44,24 @@ export function ShareDesignerScreen({ route }: Props) {
   const trip = getTrip(tripId);
   const shotRef = useRef<React.ElementRef<typeof ViewShot>>(null);
   const [busy, setBusy] = useState(false);
-
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const [design, setDesign] = useState<ShareDesign>(() => ({
-    templateId: 'sunset',
+    templateId: 'story',
     title: trip?.title ?? 'My trip',
-    subtitle: 'Tracked with TripTrack',
-    accentColor: '#E85D04',
+    subtitle: trip?.caption ?? 'Collect Trips Not Things.',
+    accentColor: '#F8FAFC',
     showDistance: true,
     showDuration: true,
-    showAvgSpeed: true,
+    showElevation: true,
     showRoute: true,
   }));
 
   const patch = (partial: Partial<ShareDesign>) =>
     setDesign((d) => ({ ...d, ...partial }));
 
-  const canShare = useMemo(() => !!trip, [trip]);
+  const visible = TEMPLATES.filter(
+    (t) => filter === 'All' || t.filter === filter,
+  );
 
   const exportImage = async () => {
     if (!shotRef.current?.capture) {
@@ -63,24 +72,23 @@ export function ShareDesignerScreen({ route }: Props) {
       setBusy(true);
       const uri = await shotRef.current.capture();
       if (Platform.OS === 'web') {
-        // Trigger download in browser
         const a = document.createElement('a');
         a.href = uri;
-        a.download = `triptrack-${tripId}.png`;
+        a.download = `triply-${tripId}.png`;
         a.click();
-        Alert.alert('Downloaded', 'Share card image saved.');
+        Alert.alert('Downloaded', 'Story image saved.');
       } else if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'image/png',
           dialogTitle: 'Share your trip',
         });
       } else {
-        Alert.alert('Saved', `Image ready at:\n${uri}`);
+        Alert.alert('Saved', uri);
       }
     } catch (e) {
       Alert.alert(
         'Share failed',
-        e instanceof Error ? e.message : 'Unable to export card',
+        e instanceof Error ? e.message : 'Unable to export',
       );
     } finally {
       setBusy(false);
@@ -98,11 +106,29 @@ export function ShareDesignerScreen({ route }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.heading}>Design your share card</Text>
+        <Text style={styles.heading}>Choose a Design</Text>
         <Text style={styles.sub}>
-          Pick a template, tweak metrics, then export to Instagram, Stories, or
-          anywhere else.
+          Story-ready templates for Instagram, TikTok, and friends.
         </Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.chipRow}>
+            {FILTERS.map((f) => {
+              const active = filter === f;
+              return (
+                <Pressable
+                  key={f}
+                  onPress={() => setFilter(f)}
+                  style={[styles.chip, active && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                    {f}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </ScrollView>
 
         <View style={styles.previewWrap}>
           <ViewShot
@@ -113,29 +139,25 @@ export function ShareDesignerScreen({ route }: Props) {
               result: Platform.OS === 'web' ? 'data-uri' : 'tmpfile',
             }}
           >
-            <ShareCardCanvas trip={trip} design={design} width={320} />
+            <ShareCardCanvas trip={trip} design={design} width={280} />
           </ViewShot>
         </View>
 
-        <Text style={styles.section}>Template</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.chipRow}>
-            {TEMPLATES.map((t) => {
-              const active = design.templateId === t.id;
-              return (
-                <Pressable
-                  key={t.id}
-                  onPress={() => patch({ templateId: t.id })}
-                  style={[styles.chip, active && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {t.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
+        <Text style={styles.section}>Templates</Text>
+        <View style={styles.templateGrid}>
+          {visible.map((t) => {
+            const active = design.templateId === t.id;
+            return (
+              <Pressable
+                key={t.id}
+                onPress={() => patch({ templateId: t.id })}
+                style={[styles.templateCard, active && styles.templateActive]}
+              >
+                <Text style={styles.templateLabel}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <Text style={styles.section}>Accent</Text>
         <View style={styles.chipRow}>
@@ -157,16 +179,12 @@ export function ShareDesignerScreen({ route }: Props) {
           style={styles.input}
           value={design.title}
           onChangeText={(title) => patch({ title })}
-          placeholder="Trip title"
-          placeholderTextColor={colors.inkFaint}
         />
         <Text style={styles.section}>Caption</Text>
         <TextInput
           style={styles.input}
           value={design.subtitle}
           onChangeText={(subtitle) => patch({ subtitle })}
-          placeholder="Short caption"
-          placeholderTextColor={colors.inkFaint}
         />
 
         <Text style={styles.section}>Show on card</Text>
@@ -175,7 +193,7 @@ export function ShareDesignerScreen({ route }: Props) {
             ['showRoute', 'Route map'],
             ['showDistance', 'Distance'],
             ['showDuration', 'Duration'],
-            ['showAvgSpeed', 'Average speed'],
+            ['showElevation', 'Elevation'],
           ] as const
         ).map(([key, label]) => (
           <View key={key} style={styles.toggleRow}>
@@ -183,15 +201,15 @@ export function ShareDesignerScreen({ route }: Props) {
             <Switch
               value={design[key]}
               onValueChange={(v) => patch({ [key]: v })}
-              trackColor={{ true: colors.primary, false: colors.border }}
+              trackColor={{ true: colors.route, false: colors.border }}
             />
           </View>
         ))}
 
         <Pressable
-          style={[styles.exportBtn, (!canShare || busy) && { opacity: 0.6 }]}
+          style={[styles.exportBtn, busy && { opacity: 0.6 }]}
           onPress={exportImage}
-          disabled={!canShare || busy}
+          disabled={busy}
         >
           <Text style={styles.exportText}>
             {busy ? 'Exporting…' : 'Export & share'}
@@ -205,20 +223,16 @@ export function ShareDesignerScreen({ route }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
-  heading: { ...typography.title, color: colors.ink },
-  sub: { ...typography.body, color: colors.inkMuted, marginTop: 6, marginBottom: 16 },
-  previewWrap: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    marginBottom: 8,
-  },
-  section: {
-    ...typography.bodyBold,
+  heading: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 26,
     color: colors.ink,
-    marginTop: 18,
-    marginBottom: 8,
+  },
+  sub: {
+    fontFamily: 'SourceSans3_400Regular',
+    color: colors.inkMuted,
+    marginTop: 6,
+    marginBottom: 14,
   },
   chipRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
@@ -230,24 +244,58 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
   },
   chipText: {
     fontFamily: 'SourceSans3_600SemiBold',
     color: colors.ink,
   },
   chipTextActive: { color: '#fff' },
+  previewWrap: {
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+    paddingVertical: 16,
+    backgroundColor: colors.dark,
+    borderRadius: radii.lg,
+  },
+  section: {
+    fontFamily: 'Outfit_600SemiBold',
+    color: colors.ink,
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  templateGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  templateCard: {
+    width: '48%' as `${number}%`,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    paddingVertical: 22,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  templateActive: {
+    borderColor: colors.route,
+    borderWidth: 2,
+  },
+  templateLabel: {
+    fontFamily: 'Outfit_600SemiBold',
+    color: colors.ink,
+  },
   swatch: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  swatchActive: {
-    borderColor: colors.ink,
-  },
+  swatchActive: { borderColor: colors.ink },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -267,10 +315,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  toggleLabel: { ...typography.body, color: colors.ink },
+  toggleLabel: {
+    fontFamily: 'SourceSans3_400Regular',
+    color: colors.ink,
+  },
   exportBtn: {
     marginTop: spacing.lg,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.ink,
     borderRadius: radii.pill,
     paddingVertical: 16,
     alignItems: 'center',
@@ -280,5 +331,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
-  missing: { ...typography.body, padding: spacing.lg },
+  missing: {
+    padding: spacing.lg,
+    fontFamily: 'SourceSans3_400Regular',
+  },
 });

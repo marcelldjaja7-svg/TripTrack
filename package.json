@@ -1,5 +1,5 @@
 {
-  "name": "triptrack",
+  "name": "triply",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
@@ -14,6 +14,7 @@
     "expo": "~57.0.23",
     "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.4",
+    "expo-linear-gradient": "~57.0.2",
     "expo-location": "~57.0.18",
     "expo-sharing": "~57.0.20",
     "expo-splash-screen": "~57.0.9",
