@@ -3,7 +3,7 @@ import type { Trip } from '../types';
 import { createSimulatedRoute } from '../utils/geo';
 import { pathDistanceMeters } from '../utils/geo';
 
-const TRIPS_KEY = 'triptrack.trips.v1';
+const TRIPS_KEY = 'triptrack.trips.v2';
 
 function sampleTrips(): Trip[] {
   const now = Date.now();
@@ -17,7 +17,10 @@ function sampleTrips(): Trip[] {
   ): Trip => {
     const startedAt = now - hoursAgo * 3600_000;
     const durationMs = durationMin * 60_000;
-    const points = createSimulatedRoute(start, startedAt, durationMs);
+    const points = createSimulatedRoute(start, startedAt, durationMs, {
+      stepMs: 15_000,
+      speedMps: 8,
+    });
     const distanceMeters = pathDistanceMeters(points);
     const avgSpeedMps = distanceMeters / (durationMs / 1000);
     const maxSpeedMps = Math.max(...points.map((p) => p.speed ?? 0), avgSpeedMps);

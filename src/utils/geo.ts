@@ -71,23 +71,34 @@ export function pointsToSvgPath(
   return `M ${coords[0]} L ${coords.slice(1).join(' ')}`;
 }
 
-/** Demo route generator for web / simulator when GPS is unavailable. */
+/**
+ * Demo route that advances at a realistic speed (~28 km/h).
+ * Distance grows with elapsed time instead of spanning a fixed path early.
+ */
 export function createSimulatedRoute(
   start: { latitude: number; longitude: number },
   startedAt: number,
   elapsedMs: number,
+  options?: { stepMs?: number; speedMps?: number },
 ): GeoPoint[] {
+  const stepMs = options?.stepMs ?? 1000;
+  const speedMps = options?.speedMps ?? 8;
   const points: GeoPoint[] = [];
-  const stepMs = 1000;
   const steps = Math.max(1, Math.floor(elapsedMs / stepMs));
+  const latPerMeter = 1 / 111_320;
+  const lonPerMeter =
+    1 / (111_320 * Math.max(0.2, Math.cos(toRad(start.latitude))));
+  const metersPerStep = speedMps * (stepMs / 1000);
+
   for (let i = 0; i <= steps; i += 1) {
-    const t = i / Math.max(steps, 1);
-    const wobble = Math.sin(t * Math.PI * 4) * 0.0012;
+    const meters = i * metersPerStep;
+    const bend = Math.sin(i / 9) * 4;
+    const drift = Math.cos(i / 7) * 2.5;
     points.push({
-      latitude: start.latitude + t * 0.018 + wobble,
-      longitude: start.longitude + t * 0.012 + Math.cos(t * Math.PI * 3) * 0.0008,
+      latitude: start.latitude + (meters * 0.75 + bend) * latPerMeter,
+      longitude: start.longitude + (meters * 0.55 + drift) * lonPerMeter,
       timestamp: startedAt + i * stepMs,
-      speed: 8 + Math.sin(t * Math.PI * 2) * 2,
+      speed: speedMps + Math.sin(i / 5) * 1.5,
     });
   }
   return points;
