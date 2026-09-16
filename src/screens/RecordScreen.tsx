@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MetricGrid } from '../components/MetricGrid';
 import { RoutePreview } from '../components/RoutePreview';
@@ -26,7 +26,7 @@ export function RecordScreen() {
   const tracker = useTripTracker();
   const { addTrip } = useTrips();
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<StackNavigationProp<RootStackParamList>>();
   const { width } = useWindowDimensions();
   const [saving, setSaving] = useState(false);
   const mapW = Math.min(width - spacing.md * 2, 520);

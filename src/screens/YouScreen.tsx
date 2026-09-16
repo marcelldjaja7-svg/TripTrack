@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTrips } from '../context/TripsContext';
 import type { RootStackParamList } from '../types';
@@ -11,7 +11,7 @@ import { formatDistance, formatDuration } from '../utils/format';
 export function YouScreen() {
   const { trips } = useTrips();
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const totals = useMemo(() => {
     const distance = trips.reduce((s, t) => s + t.distanceMeters, 0);

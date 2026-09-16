@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { StackScreenProps } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -19,7 +19,7 @@ import { useTrips } from '../context/TripsContext';
 import type { RootStackParamList, ShareDesign, ShareTemplateId } from '../types';
 import { colors, radii, spacing, typography } from '../theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ShareDesigner'>;
+type Props = StackScreenProps<RootStackParamList, 'ShareDesigner'>;
 
 const TEMPLATES: { id: ShareTemplateId; label: string }[] = [
   { id: 'sunset', label: 'Sunset' },

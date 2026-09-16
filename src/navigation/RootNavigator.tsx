@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
+import { enableScreens } from 'react-native-screens';
 import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/HomeScreen';
 import { RecordScreen } from '../screens/RecordScreen';
@@ -12,8 +13,12 @@ import { ShareDesignerScreen } from '../screens/ShareDesignerScreen';
 import type { RootStackParamList, TabParamList } from '../types';
 import { colors } from '../theme';
 
+if (Platform.OS === 'web') {
+  enableScreens(false);
+}
+
 const Tab = createBottomTabNavigator<TabParamList>();
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
 
 const navTheme = {
   ...DefaultTheme,
@@ -40,9 +45,11 @@ function Tabs() {
         },
         tabBarStyle: {
           borderTopColor: colors.border,
-          height: 64,
+          height: Platform.OS === 'web' ? 72 : 64,
           paddingBottom: 8,
           paddingTop: 6,
+          zIndex: 100,
+          elevation: 8,
         },
         tabBarIcon: ({ color, size, focused }) => {
           if (route.name === 'Home') {
@@ -85,7 +92,11 @@ function Tabs() {
 export function RootNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
-      <Stack.Navigator>
+      <Stack.Navigator
+        screenOptions={{
+          cardStyle: { backgroundColor: colors.canvas },
+        }}
+      >
         <Stack.Screen
           name="Tabs"
           component={Tabs}
@@ -97,7 +108,10 @@ export function RootNavigator() {
           options={{
             title: 'Trip',
             headerTintColor: colors.primary,
-            headerTitleStyle: { fontFamily: 'Outfit_600SemiBold', color: colors.ink },
+            headerTitleStyle: {
+              fontFamily: 'Outfit_600SemiBold',
+              color: colors.ink,
+            },
           }}
         />
         <Stack.Screen
@@ -106,7 +120,10 @@ export function RootNavigator() {
           options={{
             title: 'Share design',
             headerTintColor: colors.primary,
-            headerTitleStyle: { fontFamily: 'Outfit_600SemiBold', color: colors.ink },
+            headerTitleStyle: {
+              fontFamily: 'Outfit_600SemiBold',
+              color: colors.ink,
+            },
           }}
         />
       </Stack.Navigator>

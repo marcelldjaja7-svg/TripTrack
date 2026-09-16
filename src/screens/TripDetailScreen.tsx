@@ -9,7 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { StackScreenProps } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MetricGrid } from '../components/MetricGrid';
 import { RoutePreview } from '../components/RoutePreview';
@@ -23,7 +23,7 @@ import {
   formatWhen,
 } from '../utils/format';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'TripDetail'>;
+type Props = StackScreenProps<RootStackParamList, 'TripDetail'>;
 
 export function TripDetailScreen({ route, navigation }: Props) {
   const { tripId } = route.params;
@@ -116,6 +116,8 @@ export function TripDetailScreen({ route, navigation }: Props) {
           onPress={() =>
             navigation.navigate('ShareDesigner', { tripId: trip.id })
           }
+          accessibilityRole="button"
+          accessibilityLabel="Customize and share"
         >
           <Text style={styles.shareText}>Customize & share</Text>
         </Pressable>

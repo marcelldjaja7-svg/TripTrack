@@ -30,46 +30,60 @@ export function TripFeedCard({ trip, onPress, onShare }: Props) {
   const mapHeight = Math.round(mapWidth * 0.52);
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>T</Text>
+    <View style={styles.card}>
+      <Pressable onPress={onPress} accessibilityRole="button">
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>T</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name}>You</Text>
+            <Text style={styles.meta}>
+              {formatWhen(trip.startedAt)}
+              {trip.locationLabel ? ` · ${trip.locationLabel}` : ''}
+            </Text>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name}>You</Text>
-          <Text style={styles.meta}>
-            {formatWhen(trip.startedAt)}
-            {trip.locationLabel ? ` · ${trip.locationLabel}` : ''}
-          </Text>
+
+        <Text style={styles.title}>{trip.title}</Text>
+
+        <MetricGrid
+          columns={3}
+          metrics={[
+            { label: 'Distance', value: formatDistance(trip.distanceMeters) },
+            { label: 'Avg speed', value: formatSpeed(trip.avgSpeedMps) },
+            { label: 'Time', value: formatDuration(trip.durationMs) },
+          ]}
+        />
+
+        <View style={styles.mapWrap}>
+          <RoutePreview points={trip.points} width={mapWidth} height={mapHeight} />
         </View>
-      </View>
-
-      <Text style={styles.title}>{trip.title}</Text>
-
-      <MetricGrid
-        columns={3}
-        metrics={[
-          { label: 'Distance', value: formatDistance(trip.distanceMeters) },
-          { label: 'Avg speed', value: formatSpeed(trip.avgSpeedMps) },
-          { label: 'Time', value: formatDuration(trip.durationMs) },
-        ]}
-      />
-
-      <View style={styles.mapWrap}>
-        <RoutePreview points={trip.points} width={mapWidth} height={mapHeight} />
-      </View>
+      </Pressable>
 
       <View style={styles.actions}>
-        <Pressable style={styles.actionBtn} onPress={onShare} hitSlop={8}>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={onShare}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Share design"
+        >
           <Ionicons name="share-outline" size={22} color={colors.ink} />
           <Text style={styles.actionLabel}>Share design</Text>
         </Pressable>
-        <Pressable style={styles.actionBtn} onPress={onPress} hitSlop={8}>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={onPress}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Trip details"
+        >
           <Ionicons name="chevron-forward" size={22} color={colors.ink} />
           <Text style={styles.actionLabel}>Details</Text>
         </Pressable>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -129,6 +143,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   actionLabel: {
     ...typography.bodyBold,

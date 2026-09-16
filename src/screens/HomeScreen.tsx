@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TripFeedCard } from '../components/TripFeedCard';
 import { useTrips } from '../context/TripsContext';
@@ -17,7 +17,7 @@ import { colors, spacing, typography } from '../theme';
 export function HomeScreen() {
   const { trips, loading } = useTrips();
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<StackNavigationProp<RootStackParamList>>();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
